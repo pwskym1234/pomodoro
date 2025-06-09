@@ -78,6 +78,9 @@ class FirebaseService {
         'focusMinutes': 25,
         'breakMinutes': 5,
         'inventory': [],
+        'cycleCount': 0,
+        'energyHistory': [],
+        'complexityHistory': [],
       });
       print('✅ 사용자 초기 데이터 생성 완료');
     }

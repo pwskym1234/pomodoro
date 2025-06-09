@@ -10,6 +10,7 @@ import 'package:pomodoro_desktop/feature/pomodoro/widgets/goal_widget.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/widgets/popup_widget.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/widgets/shop_widget.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/widgets/timer_widget.dart';
+import 'package:pomodoro_desktop/feature/pomodoro/widgets/energy_graph_widget.dart';
 import 'package:pomodoro_desktop/widgets/custom_dialog.dart';
 
 class PomodoroPage extends StatefulWidget {
@@ -45,7 +46,13 @@ class _PomodoroPageState extends State<PomodoroPage> {
   bool _isGoalRefining = false;
   bool _isGeneratingBreakIdea = false;
   bool _showShop = false;
+  bool _showGraph = false;
   List<ShopItem> _inventory = [];
+  int _cycleCount = 0;
+  List<int> _energyHistory = [];
+  List<int> _complexityHistory = [];
+  int _currentComplexity = 1;
+  bool _showEnergyPopup = false;
   final List<ShopItem> _shopItems = [
     ShopItem(id: 1, name: '집중 물약', cost: 10, description: '다음 집중 사이클 +5분'),
     ShopItem(id: 2, name: '휴식 담요', cost: 5, description: '다음 휴식 사이클 +2분'),
@@ -78,6 +85,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   ?.map((e) => ShopItem.fromJson(Map<String, dynamic>.from(e)))
                   .toList() ??
               [];
+          _cycleCount = data['cycleCount'] ?? 0;
+          _energyHistory =
+              (data['energyHistory'] as List?)?.map((e) => e as int).toList() ?? [];
+          _complexityHistory =
+              (data['complexityHistory'] as List?)?.map((e) => e as int).toList() ?? [];
           _minutes = _focusMinutes;
           _seconds = 0;
           _isLoading = false;
@@ -99,14 +111,21 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _isActive = true;
         _isPaused = false;
       });
+      if (_cycleCount == 0 && _isFocusMode) {
+        _cycleCount = 1;
+        _recordComplexity();
+      }
       _timerController.startTimer(
         minutes: _minutes,
         onComplete: () {
           setState(() {
             _isActive = false;
-            _showGoalPopup = _isFocusMode;
+            if (_isFocusMode) {
+              _showGoalPopup = true;
+            } else {
+              _showEnergyPopup = true;
+            }
           });
-          if (!_isFocusMode) _switchMode();
         },
         onTick: (m, s) {
           setState(() {
@@ -130,13 +149,20 @@ class _PomodoroPageState extends State<PomodoroPage> {
   }
 
   void _switchMode() {
+    final goingToFocus = !_isFocusMode;
     setState(() {
       _isFocusMode = !_isFocusMode;
       _minutes = _isFocusMode ? _focusMinutes : _breakMinutes;
       _seconds = 0;
       _isActive = true;
       _isPaused = false;
+      if (goingToFocus) {
+        _cycleCount += 1;
+      }
     });
+    if (goingToFocus) {
+      _recordComplexity();
+    }
     _startOrPauseTimer();
   }
 
@@ -159,6 +185,22 @@ class _PomodoroPageState extends State<PomodoroPage> {
     });
     _firebaseService.saveUserData(_userId, {'currentGoal': _currentGoal});
     _switchMode();
+  }
+
+  void _recordEnergy(int level) {
+    _energyHistory.add(level);
+    _firebaseService.saveUserData(_userId, {
+      'energyHistory': _energyHistory,
+      'cycleCount': _cycleCount,
+    });
+  }
+
+  void _recordComplexity() {
+    _complexityHistory.add(_currentComplexity);
+    _firebaseService.saveUserData(_userId, {
+      'complexityHistory': _complexityHistory,
+      'cycleCount': _cycleCount,
+    });
   }
 
   void _buyItem(ShopItem item) {
@@ -244,6 +286,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   onStartPauseResume: _startOrPauseTimer,
                   onReset: _resetTimer,
                 ),
+                const SizedBox(height: 8),
+                Text('사이클: $_cycleCount',
+                    style:
+                        const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 TextField(
                   decoration: const InputDecoration(
@@ -261,6 +307,24 @@ class _PomodoroPageState extends State<PomodoroPage> {
                         .saveUserData(_userId, {'currentGoal': _currentGoal});
                   },
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text('복잡도:'),
+                    const SizedBox(width: 12),
+                    DropdownButton<int>(
+                      value: _currentComplexity,
+                      items: const [1, 2, 3]
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text('$e'),
+                              ))
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _currentComplexity = v ?? 1),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: _isGoalRefining ? null : _refineGoal,
@@ -270,6 +334,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 ElevatedButton(
                   onPressed: () => setState(() => _showShop = true),
                   child: const Text('상점 열기'),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => setState(() => _showGraph = true),
+                  child: const Text('에너지 그래프'),
                 ),
                 if (_inventory.isNotEmpty)
                   Column(
@@ -285,6 +354,14 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     goalText: _currentGoal,
                     onConfirm: _completeGoal,
                     onCancel: _failGoal,
+                  ),
+                if (_showEnergyPopup)
+                  EnergyLevelPopup(
+                    onSelect: (level) {
+                      setState(() => _showEnergyPopup = false);
+                      _recordEnergy(level);
+                      _switchMode();
+                    },
                   ),
                 if (_showGoalSuggestion && _refinedGoal.isNotEmpty)
                   GoalSuggestionPopup(
@@ -305,6 +382,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     shopItems: _shopItems,
                     onBuy: _buyItem,
                     onClose: () => setState(() => _showShop = false),
+                  ),
+                if (_showGraph)
+                  EnergyGraph(
+                    levels: _energyHistory,
+                    onClose: () => setState(() => _showGraph = false),
                   ),
                 if (!_isFocusMode)
                   Padding(

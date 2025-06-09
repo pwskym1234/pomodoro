@@ -25,7 +25,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
   final GeminiService _geminiService =
       GeminiService("YOUR_GEMINI_API_KEY_HERE");
   final TimerController _timerController = TimerController();
+<<<<<<< HEAD
   final TextEditingController _goalController = TextEditingController();
+=======
+  late final TextEditingController _goalController;
+>>>>>>> 53814c7bed75e68c6ded978a104ed9a6df7dfd86
 
   int _focusMinutes = 25;
   int _breakMinutes = 5;
@@ -63,7 +67,22 @@ class _PomodoroPageState extends State<PomodoroPage> {
   @override
   void initState() {
     super.initState();
+    _goalController = TextEditingController();
+    _goalController.addListener(_onGoalChanged);
     _initialize();
+  }
+
+  void _onGoalChanged() {
+    final text = _goalController.text;
+    if (text == _currentGoal) return;
+    setState(() {
+      _currentGoal = text;
+      _refinedGoal = '';
+      _showGoalSuggestion = false;
+    });
+    if (_userId.isNotEmpty) {
+      _firebaseService.saveUserData(_userId, {'currentGoal': _currentGoal});
+    }
   }
 
   Future<void> _initialize() async {
@@ -99,6 +118,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
           _seconds = 0;
           _isLoading = false;
         });
+        if (_goalController.text != _currentGoal) {
+          _goalController.text = _currentGoal;
+        }
       } else {
         print('⚠️ 사용자 문서가 존재하지 않음. 초기 데이터가 필요함.');
         // 초기 문서를 만들어주는 코드도 고려 가능
@@ -258,6 +280,13 @@ class _PomodoroPageState extends State<PomodoroPage> {
   }
 
   @override
+  void dispose() {
+    _goalController.dispose();
+    _timerController.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
@@ -302,6 +331,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     border: OutlineInputBorder(),
                   ),
                   controller: _goalController,
+<<<<<<< HEAD
                   onChanged: (v) {
                     setState(() {
                       _currentGoal = v;
@@ -311,6 +341,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     _firebaseService
                         .saveUserData(_userId, {'currentGoal': _currentGoal});
                   },
+=======
+>>>>>>> 53814c7bed75e68c6ded978a104ed9a6df7dfd86
                 ),
                 const SizedBox(height: 8),
                 Row(

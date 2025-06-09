@@ -146,3 +146,28 @@ class GoalSuggestionPopup extends StatelessWidget {
     );
   }
 }
+
+class EnergyLevelPopup extends StatelessWidget {
+  final void Function(int) onSelect;
+
+  const EnergyLevelPopup({super.key, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
+      title: const Text('오늘 에너지 레벨은?',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+      content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(
+          3,
+          (index) => ElevatedButton(
+            onPressed: () => onSelect(index + 1),
+            child: Text('${index + 1}'),
+          ),
+        ),
+      ),
+    );
+  }
+}

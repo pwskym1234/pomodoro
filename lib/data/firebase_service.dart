@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:pomodoro_desktop/data/model/shop_item.dart';
+import 'package:pomodoro_desktop/data/model/day_record.dart';
+import 'package:pomodoro_desktop/data/model/cycle_record.dart';
 import '../firebase_options.dart';
 
 class FirebaseService {
@@ -48,6 +50,17 @@ class FirebaseService {
           .map((item) => item.toJson())
           .toList();
     }
+    if (dataToSave.containsKey('todayCycles')) {
+      dataToSave['todayCycles'] =
+          (dataToSave['todayCycles'] as List<CycleRecord>)
+              .map((e) => e.toJson())
+              .toList();
+    }
+    if (dataToSave.containsKey('history')) {
+      dataToSave['history'] = (dataToSave['history'] as List<DayRecord>)
+          .map((e) => e.toJson())
+          .toList();
+    }
 
     await db
         .collection('artifacts')
@@ -81,6 +94,8 @@ class FirebaseService {
         'cycleCount': 0,
         'energyHistory': [],
         'complexityHistory': [],
+        'todayCycles': [],
+        'history': [],
       });
       print('✅ 사용자 초기 데이터 생성 완료');
     }

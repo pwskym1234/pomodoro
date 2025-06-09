@@ -1,0 +1,85 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:pomodoro_desktop/data/model/shop_item.dart';
+import '../firebase_options.dart';
+
+class FirebaseService {
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final FirebaseFirestore db = FirebaseFirestore.instance;
+  String? userId;
+
+  Future<void> initializeFirebase() async {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
+    }
+  }
+
+  Future<String?> authenticateUser() async {
+    try {
+      final user = auth.currentUser;
+      if (user != null) return user.uid;
+
+      final credential = await auth.signInAnonymously();
+      userId = credential.user?.uid;
+      return userId;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getUserDataStream(
+      String userId) {
+    return db
+        .collection('artifacts')
+        .doc('default-app-id')
+        .collection('users')
+        .doc(userId)
+        .collection('pomodoroData')
+        .doc('userState')
+        .snapshots();
+  }
+
+  Future<void> saveUserData(
+      String userId, Map<String, dynamic> dataToSave) async {
+    if (dataToSave.containsKey('inventory')) {
+      dataToSave['inventory'] = (dataToSave['inventory'] as List<ShopItem>)
+          .map((item) => item.toJson())
+          .toList();
+    }
+
+    await db
+        .collection('artifacts')
+        .doc('default-app-id')
+        .collection('users')
+        .doc(userId)
+        .collection('pomodoroData')
+        .doc('userState')
+        .set(dataToSave, SetOptions(merge: true));
+  }
+
+  Future<void> createInitialUserDataIfNotExists(String userId) async {
+    final docRef = db
+        .collection('artifacts')
+        .doc('default-app-id')
+        .collection('users')
+        .doc(userId)
+        .collection('pomodoroData')
+        .doc('userState');
+
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      await docRef.set({
+        'xp': 0,
+        'level': 1,
+        'coins': 0,
+        'currentGoal': '',
+        'focusMinutes': 25,
+        'breakMinutes': 5,
+        'inventory': [],
+      });
+      print('✅ 사용자 초기 데이터 생성 완료');
+    }
+  }
+}

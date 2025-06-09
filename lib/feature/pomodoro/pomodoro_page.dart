@@ -25,6 +25,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   final GeminiService _geminiService =
       GeminiService("YOUR_GEMINI_API_KEY_HERE");
   final TimerController _timerController = TimerController();
+  final TextEditingController _goalController = TextEditingController();
 
   int _focusMinutes = 25;
   int _breakMinutes = 5;
@@ -70,8 +71,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
     _userId = (await _firebaseService.authenticateUser()) ?? '';
     await _firebaseService.createInitialUserDataIfNotExists(_userId);
     _firebaseService.getUserDataStream(_userId).listen((snapshot) {
-      print(
-          '📡 Firestore Snapshot received: exists=${snapshot.exists}, hasData=${snapshot.data() != null}');
+      // print(
+      //     '📡 Firestore Snapshot received: exists=${snapshot.exists}, hasData=${snapshot.data() != null}');
       final data = snapshot.data();
       if (data != null) {
         setState(() {
@@ -79,6 +80,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
           _level = data['level'] ?? 1;
           _coins = data['coins'] ?? 0;
           _currentGoal = data['currentGoal'] ?? '';
+          _goalController.text = _currentGoal;
           _focusMinutes = data['focusMinutes'] ?? 25;
           _breakMinutes = data['breakMinutes'] ?? 5;
           _inventory = (data['inventory'] as List?)
@@ -87,9 +89,12 @@ class _PomodoroPageState extends State<PomodoroPage> {
               [];
           _cycleCount = data['cycleCount'] ?? 0;
           _energyHistory =
-              (data['energyHistory'] as List?)?.map((e) => e as int).toList() ?? [];
-          _complexityHistory =
-              (data['complexityHistory'] as List?)?.map((e) => e as int).toList() ?? [];
+              (data['energyHistory'] as List?)?.map((e) => e as int).toList() ??
+                  [];
+          _complexityHistory = (data['complexityHistory'] as List?)
+                  ?.map((e) => e as int)
+                  .toList() ??
+              [];
           _minutes = _focusMinutes;
           _seconds = 0;
           _isLoading = false;
@@ -288,15 +293,15 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 ),
                 const SizedBox(height: 8),
                 Text('사이클: $_cycleCount',
-                    style:
-                        const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 TextField(
                   decoration: const InputDecoration(
                     labelText: '오늘의 목표',
                     border: OutlineInputBorder(),
                   ),
-                  controller: TextEditingController(text: _currentGoal),
+                  controller: _goalController,
                   onChanged: (v) {
                     setState(() {
                       _currentGoal = v;
@@ -404,5 +409,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _goalController.dispose();
+    super.dispose();
   }
 }

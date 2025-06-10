@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:pomodoro_desktop/data/model/shop_item.dart';
 import 'package:pomodoro_desktop/data/model/day_record.dart';
 import 'package:pomodoro_desktop/data/model/cycle_record.dart';
+import 'package:pomodoro_desktop/data/model/schedule.dart';
 import '../firebase_options.dart';
 
 class FirebaseService {
@@ -61,6 +62,10 @@ class FirebaseService {
           .map((e) => e.toJson())
           .toList();
     }
+    if (dataToSave.containsKey('schedule')) {
+      dataToSave['schedule'] =
+          (dataToSave['schedule'] as Schedule).toJson();
+    }
 
     await db
         .collection('artifacts')
@@ -90,12 +95,18 @@ class FirebaseService {
         'currentGoal': '',
         'focusMinutes': 25,
         'breakMinutes': 5,
+        'longBreakMinutes': 15,
+        'longBreakInterval': 4,
         'inventory': [],
         'cycleCount': 0,
         'energyHistory': [],
         'complexityHistory': [],
         'todayCycles': [],
         'history': [],
+        'schedule': Schedule.empty(
+          const ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+          17,
+        ).toJson(),
       });
       print('✅ 사용자 초기 데이터 생성 완료');
     }

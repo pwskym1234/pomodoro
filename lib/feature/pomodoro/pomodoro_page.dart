@@ -15,6 +15,8 @@ import 'package:pomodoro_desktop/feature/pomodoro/widgets/cycle_history_widget.d
 import 'package:pomodoro_desktop/data/model/cycle_record.dart';
 import 'package:pomodoro_desktop/data/model/day_record.dart';
 import 'package:pomodoro_desktop/widgets/custom_dialog.dart';
+import '../report/report_page.dart';
+import '../settings/settings_page.dart';
 
 class PomodoroPage extends StatefulWidget {
   const PomodoroPage({super.key});
@@ -32,6 +34,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
   int _focusMinutes = 25;
   int _breakMinutes = 5;
+  int _longBreakMinutes = 15;
+  int _longBreakInterval = 4;
   int _minutes = 25;
   int _seconds = 0;
   bool _isActive = false;
@@ -57,6 +61,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
   List<int> _complexityHistory = [];
   int _currentComplexity = 1;
   bool _showEnergyPopup = false;
+  final TextEditingController _startTimeController = TextEditingController();
+  String _currentStartTime = '';
   List<CycleRecord> _todayCycles = [];
   Map<String, List<CycleRecord>> _history = {};
   bool _showHistory = false;
@@ -71,6 +77,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
   void initState() {
     super.initState();
     _goalController.addListener(_onGoalChanged);
+    _startTimeController.text = _formatTime(DateTime.now());
+    _currentStartTime = _startTimeController.text;
     _initialize();
   }
 
@@ -104,6 +112,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
           _goalController.text = _currentGoal;
           _focusMinutes = data['focusMinutes'] ?? 25;
           _breakMinutes = data['breakMinutes'] ?? 5;
+          _longBreakMinutes = data['longBreakMinutes'] ?? 15;
+          _longBreakInterval = data['longBreakInterval'] ?? 4;
           _inventory = (data['inventory'] as List?)
                   ?.map((e) => ShopItem.fromJson(Map<String, dynamic>.from(e)))
                   .toList() ??
@@ -152,7 +162,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
       });
       if (_cycleCount == 0 && _isFocusMode) {
         _cycleCount = 1;
-        _recordComplexity();
+        _startTimeController.text = _formatTime(DateTime.now());
+        _currentStartTime = _startTimeController.text;
       }
       _timerController.startTimer(
         minutes: _minutes,
@@ -184,6 +195,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _isFocusMode = true;
       _minutes = _focusMinutes;
       _seconds = 0;
+      _startTimeController.text = _formatTime(DateTime.now());
+      _currentStartTime = _startTimeController.text;
     });
   }
 
@@ -213,17 +226,23 @@ class _PomodoroPageState extends State<PomodoroPage> {
     final goingToFocus = !_isFocusMode;
     setState(() {
       _isFocusMode = !_isFocusMode;
-      _minutes = _isFocusMode ? _focusMinutes : _breakMinutes;
+      if (_isFocusMode) {
+        _minutes = _focusMinutes;
+      } else {
+        final isLong = _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
+        _minutes = isLong ? _longBreakMinutes : _breakMinutes;
+      }
       _seconds = 0;
       _isActive = true;
       _isPaused = false;
       if (goingToFocus) {
         _cycleCount += 1;
       }
+      if (goingToFocus) {
+        _startTimeController.text = _formatTime(DateTime.now());
+        _currentStartTime = _startTimeController.text;
+      }
     });
-    if (goingToFocus) {
-      _recordComplexity();
-    }
     _startOrPauseTimer();
   }
 
@@ -250,36 +269,46 @@ class _PomodoroPageState extends State<PomodoroPage> {
     _switchMode();
   }
 
+  int? _pendingEnergy;
+  bool _showComplexityPopup = false;
+
   void _recordEnergy(int level) {
-    _energyHistory.add(level);
-    _recordCycle(level);
-    _firebaseService.saveUserData(_userId, {
-      'energyHistory': _energyHistory,
-      'cycleCount': _cycleCount,
-      'todayCycles': _todayCycles,
+    setState(() {
+      _showEnergyPopup = false;
+      _pendingEnergy = level;
+      _showComplexityPopup = true;
     });
   }
 
-  void _recordCycle(int energy) {
+  void _recordCycle(int energy, int complexity) {
     if (_lastCycleGoal.isEmpty) return;
-    final complexity =
-        _complexityHistory.isNotEmpty ? _complexityHistory.last : _currentComplexity;
     final record = CycleRecord(
       goal: _lastCycleGoal,
       complexity: complexity,
       energy: energy,
+      startTime: _currentStartTime,
     );
     _todayCycles.add(record);
     _lastCycleGoal = '';
   }
 
-  void _recordComplexity() {
-    _complexityHistory.add(_currentComplexity);
+  void _recordComplexity(int level) {
+    _currentComplexity = level;
+    _complexityHistory.add(level);
+    final energy = _pendingEnergy ?? 1;
+    _recordCycle(energy, level);
     _firebaseService.saveUserData(_userId, {
+      'energyHistory': [..._energyHistory, energy],
       'complexityHistory': _complexityHistory,
       'cycleCount': _cycleCount,
+      'todayCycles': _todayCycles,
     });
+    _energyHistory.add(energy);
+    _pendingEnergy = null;
+    _showComplexityPopup = false;
+    _switchMode();
   }
+
 
   void _buyItem(ShopItem item) {
     if (!GoalLogic.canAfford(item, _coins)) {
@@ -330,6 +359,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
     }
   }
 
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
@@ -371,6 +404,15 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 ElevatedButton(
                   onPressed: _resetDailyCycles,
                   child: const Text('사이클 초기화'),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _startTimeController,
+                  decoration: const InputDecoration(
+                    labelText: '시작 시각(HH:mm)',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (v) => _currentStartTime = v,
                 ),
                 const SizedBox(height: 20),
                 TextField(
@@ -427,6 +469,20 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   onPressed: () => setState(() => _showHistory = true),
                   child: const Text('기록 보기'),
                 ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ),
+                  child: const Text('설정 페이지'),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ReportPage()),
+                  ),
+                  child: const Text('레포트 페이지'),
+                ),
                 if (_inventory.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,10 +501,12 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 if (_showEnergyPopup)
                   EnergyLevelPopup(
                     onSelect: (level) {
-                      setState(() => _showEnergyPopup = false);
                       _recordEnergy(level);
-                      _switchMode();
                     },
+                  ),
+                if (_showComplexityPopup)
+                  ComplexityLevelPopup(
+                    onSelect: (level) => _recordComplexity(level),
                   ),
                 if (_showGoalSuggestion && _refinedGoal.isNotEmpty)
                   GoalSuggestionPopup(
@@ -502,6 +560,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   @override
   void dispose() {
     _goalController.dispose();
+    _startTimeController.dispose();
     _timerController.cancel();
     super.dispose();
   }

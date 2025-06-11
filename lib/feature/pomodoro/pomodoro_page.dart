@@ -350,7 +350,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
   }
 
   void _recordCycle(int energy, int complexity) {
-    if (_lastCycleGoal.isEmpty) return;
     final record = CycleRecord(
       goal: _lastCycleGoal,
       complexity: complexity,

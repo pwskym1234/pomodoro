@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pomodoro_desktop/data/model/shop_item.dart';
@@ -86,7 +87,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
   String _getScheduledStartTime() {
     final list = _schedule[_currentDayKey()];
-    final index = _cycleCount - 1;
+    final index = max(_cycleCount - 1, 0);
     if (list != null && index >= 0 && index < list.length) {
       final t = list[index];
       if (t != 'none') return t;

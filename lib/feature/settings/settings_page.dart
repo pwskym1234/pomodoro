@@ -36,6 +36,47 @@ class _SettingsPageState extends State<SettingsPage> {
 
   final List<String> _timeOptions = _generateTimeOptions();
 
+  DateTime _parseTime(String t) {
+    final parts = t.split(':');
+    return DateTime(0, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+  }
+
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _adjustFollowingCycles(String day, int startIndex) {
+    final cycles = _schedule[day]!;
+    if (cycles[startIndex] == 'none') {
+      for (int i = startIndex + 1; i < cycles.length; i++) {
+        cycles[i] = 'none';
+      }
+      return;
+    }
+
+    final focus = int.tryParse(_focusController.text) ?? 25;
+    final brk = int.tryParse(_breakController.text) ?? 5;
+    final longBrk = int.tryParse(_longBreakController.text) ?? 15;
+    final interval = int.tryParse(_intervalController.text) ?? 4;
+
+    var time = _parseTime(cycles[startIndex]);
+    for (int i = startIndex + 1; i < cycles.length; i++) {
+      final isLong = (i % interval == 0);
+      time = time.add(Duration(minutes: focus + (isLong ? longBrk : brk)));
+      cycles[i] = _formatTime(time);
+    }
+  }
+
+  void _applyDefaultSchedule() {
+    for (final day in _dayKeys) {
+      final cycles = _schedule[day]!;
+      if (cycles[0] == 'none') {
+        cycles[0] = '07:00';
+      }
+      _adjustFollowingCycles(day, 0);
+    }
+  }
+
   Map<String, List<String>> _schedule = {
     for (var d in _dayKeys) d: List.filled(_scheduleCycleCount, 'none'),
   };
@@ -64,6 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 e.key: (e.value as List).map((v) => v.toString()).toList()
             };
           }
+          _applyDefaultSchedule();
           _loading = false;
         });
       }
@@ -146,7 +188,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                           child: Text(t),
                                         ))
                                     .toList(),
-                                onChanged: (v) => setState(() => cycles[i] = v!),
+                                onChanged: (v) {
+                                  setState(() {
+                                    cycles[i] = v!;
+                                    _adjustFollowingCycles(day, i);
+                                  });
+                                },
                               ),
                             ),
                         ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class TimerDisplay extends StatelessWidget {
   final bool isFocusMode;
+  final bool isLongBreak;
   final int minutes;
   final int seconds;
   final bool isActive;
@@ -14,6 +15,7 @@ class TimerDisplay extends StatelessWidget {
     required this.isFocusMode,
     required this.minutes,
     required this.seconds,
+    required this.isLongBreak,
     required this.isActive,
     required this.isPaused,
     required this.onStartPauseResume,
@@ -25,7 +27,9 @@ class TimerDisplay extends StatelessWidget {
     return Column(
       children: [
         Text(
-          isFocusMode ? '집중 시간!' : '휴식 시간!',
+          isFocusMode
+              ? '집중 시간!'
+              : (isLongBreak ? '긴 휴식 시간!' : '짧은 휴식 시간!'),
           style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,

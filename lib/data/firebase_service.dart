@@ -101,6 +101,7 @@ class FirebaseService {
         'cycleCount': 0,
         'energyHistory': [],
         'complexityHistory': [],
+        'currentComplexity': 1,
         'todayCycles': [],
         'history': [],
         'schedule': Schedule.empty(

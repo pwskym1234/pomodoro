@@ -49,6 +49,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   bool _isActive = false;
   bool _isPaused = false;
   bool _isFocusMode = true;
+  bool _isLongBreak = false;
   bool _isLoading = true;
 
   String _userId = '';
@@ -114,6 +115,14 @@ class _PomodoroPageState extends State<PomodoroPage> {
     }
   }
 
+  void _saveGoalAndComplexity() {
+    _firebaseService.saveUserData(_userId, {
+      'currentGoal': _currentGoal,
+      'currentComplexity': _currentComplexity,
+    });
+    showCustomMessageBox(context, '저장되었습니다');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -167,6 +176,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   ?.map((e) => e as int)
                   .toList() ??
               [];
+          _currentComplexity = data['currentComplexity'] ?? 1;
           _todayCycles = (data['todayCycles'] as List?)
                   ?.map((e) =>
                       CycleRecord.fromJson(Map<String, dynamic>.from(e)))
@@ -212,18 +222,19 @@ class _PomodoroPageState extends State<PomodoroPage> {
       if (_cycleCount == 0 && _isFocusMode) {
         _cycleCount = 1;
         _updateStartTimeFromSchedule();
+        _isLongBreak = false;
       }
       _timerController.startTimer(
         minutes: _minutes,
         onComplete: () {
           setState(() {
             _isActive = false;
-            if (_isFocusMode) {
-              _showGoalPopup = true;
-            } else {
-              _showEnergyPopup = true;
-            }
           });
+          if (_isFocusMode) {
+            setState(() => _showGoalPopup = true);
+          } else {
+            _switchMode();
+          }
         },
         onTick: (m, s) {
           setState(() {
@@ -241,6 +252,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _isActive = false;
       _isPaused = false;
       _isFocusMode = true;
+      _isLongBreak = false;
       _minutes = _focusMinutes;
       _seconds = 0;
       _startTimeController.text = _formatTime(DateTime.now());
@@ -258,6 +270,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
     _cycleCount = 0;
     _energyHistory.clear();
     _complexityHistory.clear();
+    _isLongBreak = false;
     _firebaseService.saveUserData(_userId, {
       'cycleCount': _cycleCount,
       'energyHistory': _energyHistory,
@@ -276,12 +289,14 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _isFocusMode = !_isFocusMode;
       if (_isFocusMode) {
         _minutes = _focusMinutes;
+        _isLongBreak = false;
       } else {
-        final isLong = _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
-        _minutes = isLong ? _longBreakMinutes : _breakMinutes;
+        _isLongBreak =
+            _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
+        _minutes = _isLongBreak ? _longBreakMinutes : _breakMinutes;
       }
       _seconds = 0;
-      _isActive = true;
+      _isActive = false;
       _isPaused = false;
       if (goingToFocus) {
         _cycleCount += 1;
@@ -290,7 +305,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _updateStartTimeFromSchedule();
       }
     });
-    _startOrPauseTimer();
   }
 
   void _completeGoal() {
@@ -300,10 +314,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _lastCycleGoal = _currentGoal;
       _currentGoal = '';
       _showGoalPopup = false;
+      _showEnergyPopup = true;
     });
     _firebaseService
         .saveUserData(_userId, {'xp': _xp, 'currentGoal': _currentGoal});
-    _switchMode();
   }
 
   void _failGoal() {
@@ -311,9 +325,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _lastCycleGoal = _currentGoal;
       _currentGoal = '';
       _showGoalPopup = false;
+      _showEnergyPopup = true;
     });
     _firebaseService.saveUserData(_userId, {'currentGoal': _currentGoal});
-    _switchMode();
   }
 
   int? _pendingEnergy;
@@ -436,6 +450,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
               children: [
                 TimerDisplay(
                   isFocusMode: _isFocusMode,
+                  isLongBreak: _isLongBreak,
                   minutes: _minutes,
                   seconds: _seconds,
                   isActive: _isActive,
@@ -516,6 +531,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 ElevatedButton(
                   onPressed: _isGoalRefining ? null : _refineGoal,
                   child: Text(_isGoalRefining ? '구체화 중...' : '✨ 목표 구체화'),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _saveGoalAndComplexity,
+                  child: const Text('저장'),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(

@@ -34,9 +34,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
   final TextEditingController _goalController = TextEditingController();
 
   static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  static const _cycleCount = 17;
+  static const _scheduleCycleCount = 17;
   Map<String, List<String>> _schedule =
-      Schedule.empty(_dayKeys, _cycleCount).days;
+      Schedule.empty(_dayKeys, _scheduleCycleCount).days;
 
   int _focusMinutes = 25;
   int _breakMinutes = 5;

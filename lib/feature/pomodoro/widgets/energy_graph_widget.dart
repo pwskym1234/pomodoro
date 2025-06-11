@@ -81,6 +81,18 @@ class _HourlyPainter extends CustomPainter {
       ..strokeWidth = 1;
     canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), axisPaint);
     canvas.drawLine(Offset(0, 0), Offset(0, size.height), axisPaint);
+
+    // y-axis labels
+    for (var i = 1; i <= 3; i++) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+            text: '$i',
+            style: const TextStyle(color: Colors.black, fontSize: 10)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(
+          canvas, Offset(-20, size.height - i * stepY - textPainter.height / 2));
+    }
   }
 
   @override
@@ -115,6 +127,18 @@ class _EnergyPainter extends CustomPainter {
       ..strokeWidth = 1;
     canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), axisPaint);
     canvas.drawLine(Offset(0, 0), Offset(0, size.height), axisPaint);
+
+    // y-axis labels
+    for (var i = 1; i <= 3; i++) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+            text: '$i',
+            style: const TextStyle(color: Colors.black, fontSize: 10)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(
+          canvas, Offset(-20, size.height - i * stepY - textPainter.height / 2));
+    }
   }
 
   @override

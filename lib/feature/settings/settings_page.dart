@@ -26,7 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
   static List<String> _generateTimeOptions() {
     final times = <String>['none'];
     for (var h = _startHour; h <= _endHour; h++) {
-      for (var m = 0; m < 60; m += 10) {
+      for (var m = 0; m < 60; m++) {
         times.add(
             '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
       }

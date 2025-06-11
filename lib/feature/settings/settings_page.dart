@@ -122,7 +122,8 @@ class _SettingsPageState extends State<SettingsPage> {
       'breakMinutes': brk,
       'longBreakMinutes': longBrk,
       'longBreakInterval': interval,
-      'schedule': Schedule(days: _schedule).toJson(),
+      // Pass Schedule object directly so FirebaseService can serialize it
+      'schedule': Schedule(days: _schedule),
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('저장되었습니다')),

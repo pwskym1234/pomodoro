@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pomodoro_desktop/data/model/shop_item.dart';
 import 'package:pomodoro_desktop/data/firebase_service.dart';
 import 'package:pomodoro_desktop/data/gemini_service.dart';
+import 'package:pomodoro_desktop/data/model/schedule.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/logic/goal_logic.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/logic/timer_logic.dart';
 import 'package:pomodoro_desktop/feature/pomodoro/widgets/goal_widget.dart';
@@ -31,6 +32,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
       GeminiService("YOUR_GEMINI_API_KEY_HERE");
   final TimerController _timerController = TimerController();
   final TextEditingController _goalController = TextEditingController();
+
+  static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  static const _cycleCount = 17;
+  Map<String, List<String>> _schedule =
+      Schedule.empty(_dayKeys, _cycleCount).days;
 
   int _focusMinutes = 25;
   int _breakMinutes = 5;
@@ -72,6 +78,37 @@ class _PomodoroPageState extends State<PomodoroPage> {
     ShopItem(id: 2, name: '휴식 담요', cost: 5, description: '다음 휴식 사이클 +2분'),
     ShopItem(id: 3, name: '행운의 부적', cost: 15, description: '목표 달성 시 추가 XP 획득'),
   ];
+
+  String _currentDayKey() => _dayKeys[DateTime.now().weekday - 1];
+
+  String _getScheduledStartTime() {
+    final list = _schedule[_currentDayKey()];
+    final index = _cycleCount - 1;
+    if (list != null && index >= 0 && index < list.length) {
+      final t = list[index];
+      if (t != 'none') return t;
+    }
+    return _formatTime(DateTime.now());
+  }
+
+  void _updateStartTimeFromSchedule() {
+    final time = _getScheduledStartTime();
+    _startTimeController.text = time;
+    _currentStartTime = time;
+  }
+
+  void _saveCurrentStartTime(String time) {
+    final key = _currentDayKey();
+    final list = _schedule[key];
+    final index = _cycleCount - 1;
+    if (list != null && index >= 0 && index < list.length) {
+      list[index] = time.isEmpty ? 'none' : time;
+      _firebaseService.saveUserData(
+        _userId,
+        {'schedule': Schedule(days: _schedule)},
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -131,6 +168,13 @@ class _PomodoroPageState extends State<PomodoroPage> {
                       CycleRecord.fromJson(Map<String, dynamic>.from(e)))
                   .toList() ??
               [];
+          if (data['schedule'] != null) {
+            final schedJson = Map<String, dynamic>.from(data['schedule']);
+            _schedule = {
+              for (var e in schedJson.entries)
+                e.key: (e.value as List).map((v) => v.toString()).toList()
+            };
+          }
           _history = {};
           (data['history'] as List?)?.forEach((day) {
             final record = DayRecord.fromJson(Map<String, dynamic>.from(day));
@@ -139,6 +183,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
           _minutes = _focusMinutes;
           _seconds = 0;
           _isLoading = false;
+          _updateStartTimeFromSchedule();
         });
         if (_goalController.text != _currentGoal) {
           _goalController.text = _currentGoal;
@@ -162,8 +207,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       });
       if (_cycleCount == 0 && _isFocusMode) {
         _cycleCount = 1;
-        _startTimeController.text = _formatTime(DateTime.now());
-        _currentStartTime = _startTimeController.text;
+        _updateStartTimeFromSchedule();
       }
       _timerController.startTimer(
         minutes: _minutes,
@@ -239,8 +283,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _cycleCount += 1;
       }
       if (goingToFocus) {
-        _startTimeController.text = _formatTime(DateTime.now());
-        _currentStartTime = _startTimeController.text;
+        _updateStartTimeFromSchedule();
       }
     });
     _startOrPauseTimer();
@@ -412,7 +455,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     labelText: '시작 시각(HH:mm)',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (v) => _currentStartTime = v,
+                  onChanged: (v) {
+                    _currentStartTime = v;
+                    _saveCurrentStartTime(v);
+                  },
                 ),
                 const SizedBox(height: 20),
                 TextField(

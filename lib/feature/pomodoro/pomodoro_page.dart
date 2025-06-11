@@ -34,6 +34,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   final TextEditingController _goalController = TextEditingController();
 
   static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  static const _dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   static const _scheduleCycleCount = 17;
   Map<String, List<String>> _schedule =
       Schedule.empty(_dayKeys, _scheduleCycleCount).days;
@@ -79,7 +80,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
     ShopItem(id: 3, name: '행운의 부적', cost: 15, description: '목표 달성 시 추가 XP 획득'),
   ];
 
-  String _currentDayKey() => _dayKeys[DateTime.now().weekday - 1];
+  int _selectedDayIndex = DateTime.now().weekday - 1;
+
+  String _currentDayKey() => _dayKeys[_selectedDayIndex];
 
   String _getScheduledStartTime() {
     final list = _schedule[_currentDayKey()];
@@ -449,16 +452,29 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   child: const Text('사이클 초기화'),
                 ),
                 const SizedBox(height: 20),
+                DropdownButton<int>(
+                  value: _selectedDayIndex,
+                  items: List.generate(
+                    _dayKeys.length,
+                    (i) => DropdownMenuItem(
+                      value: i,
+                      child: Text(_dayLabels[i]),
+                    ),
+                  ),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _selectedDayIndex = v);
+                    _updateStartTimeFromSchedule();
+                  },
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: _startTimeController,
                   decoration: const InputDecoration(
                     labelText: '시작 시각(HH:mm)',
                     border: OutlineInputBorder(),
                   ),
-                  onChanged: (v) {
-                    _currentStartTime = v;
-                    _saveCurrentStartTime(v);
-                  },
+                  enabled: false,
                 ),
                 const SizedBox(height: 20),
                 TextField(

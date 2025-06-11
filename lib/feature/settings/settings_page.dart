@@ -21,7 +21,7 @@ class _SettingsPageState extends State<SettingsPage> {
   static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   static const _startHour = 7;
   static const _endHour = 23;
-  static const _cycleCount = 17;
+  static const _scheduleCycleCount = 17;
 
   static List<String> _generateTimeOptions() {
     final times = <String>['none'];
@@ -37,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final List<String> _timeOptions = _generateTimeOptions();
 
   Map<String, List<String>> _schedule = {
-    for (var d in _dayKeys) d: List.filled(_cycleCount, 'none'),
+    for (var d in _dayKeys) d: List.filled(_scheduleCycleCount, 'none'),
   };
 
   @override
@@ -128,7 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: DataTable(
                     columns: [
                       const DataColumn(label: Text('Day')),
-                      for (var c = 1; c <= _cycleCount; c++)
+                      for (var c = 1; c <= _scheduleCycleCount; c++)
                         DataColumn(label: Text('Cycle $c')),
                     ],
                     rows: _dayKeys.map((day) {

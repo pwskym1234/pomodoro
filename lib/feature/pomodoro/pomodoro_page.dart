@@ -223,6 +223,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _cycleCount = 1;
         _updateStartTimeFromSchedule();
         _isLongBreak = false;
+        if (_userId.isNotEmpty) {
+          _firebaseService
+              .saveUserData(_userId, {'cycleCount': _cycleCount});
+        }
       }
       _timerController.startTimer(
         minutes: _minutes,
@@ -300,6 +304,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _isPaused = false;
       if (goingToFocus) {
         _cycleCount += 1;
+        if (_userId.isNotEmpty) {
+          _firebaseService
+              .saveUserData(_userId, {'cycleCount': _cycleCount});
+        }
       }
       if (goingToFocus) {
         _updateStartTimeFromSchedule();

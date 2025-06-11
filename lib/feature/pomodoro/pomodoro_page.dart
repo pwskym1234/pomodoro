@@ -361,19 +361,22 @@ class _PomodoroPageState extends State<PomodoroPage> {
   }
 
   void _recordComplexity(int level) {
-    _currentComplexity = level;
-    _complexityHistory.add(level);
     final energy = _pendingEnergy ?? 1;
+    setState(() {
+      _currentComplexity = level;
+      _complexityHistory.add(level);
+      _energyHistory.add(energy);
+      _pendingEnergy = null;
+      _showComplexityPopup = false;
+    });
+
     _recordCycle(energy, level);
     _firebaseService.saveUserData(_userId, {
-      'energyHistory': [..._energyHistory, energy],
+      'energyHistory': _energyHistory,
       'complexityHistory': _complexityHistory,
       'cycleCount': _cycleCount,
       'todayCycles': _todayCycles,
     });
-    _energyHistory.add(energy);
-    _pendingEnergy = null;
-    _showComplexityPopup = false;
     _switchMode();
   }
 

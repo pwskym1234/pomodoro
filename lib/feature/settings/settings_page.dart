@@ -21,11 +21,24 @@ class _SettingsPageState extends State<SettingsPage> {
   static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   static const _startHour = 7;
   static const _endHour = 23;
+  static const _scheduleCycleCount = 17;
+
+  static List<String> _generateTimeOptions() {
+    final times = <String>['none'];
+    for (var h = _startHour; h <= _endHour; h++) {
+      for (var m = 0; m < 60; m += 10) {
+        times.add(
+            '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
+      }
+    }
+    return times;
+  }
+
+  final List<String> _timeOptions = _generateTimeOptions();
 
   Map<String, List<String>> _schedule = {
-    for (var d in _dayKeys) d: List.filled(_endHour - _startHour + 1, 'none'),
+    for (var d in _dayKeys) d: List.filled(_scheduleCycleCount, 'none'),
   };
-  final _slotTypes = ['none', 'breakfast', 'work', 'pomodoro'];
 
   @override
   void initState() {
@@ -110,34 +123,36 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 16),
             Expanded(
               child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columns: [
-                    const DataColumn(label: Text('Day')),
-                    for (var h = _startHour; h <= _endHour; h++)
-                      DataColumn(label: Text('$h')),
-                  ],
-                  rows: _dayKeys.map((day) {
-                    final slots = _schedule[day]!;
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(day.toUpperCase())),
-                        for (var i = 0; i < slots.length; i++)
-                          DataCell(
-                            DropdownButton<String>(
-                              value: slots[i],
-                              items: _slotTypes
-                                  .map((t) => DropdownMenuItem(
-                                        value: t,
-                                        child: Text(t),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) => setState(() => slots[i] = v!),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: [
+                      const DataColumn(label: Text('Day')),
+                      for (var c = 1; c <= _scheduleCycleCount; c++)
+                        DataColumn(label: Text('Cycle $c')),
+                    ],
+                    rows: _dayKeys.map((day) {
+                      final cycles = _schedule[day]!;
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(day.toUpperCase())),
+                          for (var i = 0; i < cycles.length; i++)
+                            DataCell(
+                              DropdownButton<String>(
+                                value: cycles[i],
+                                items: _timeOptions
+                                    .map((t) => DropdownMenuItem(
+                                          value: t,
+                                          child: Text(t),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) => setState(() => cycles[i] = v!),
+                              ),
                             ),
-                          ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),

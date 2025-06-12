@@ -77,6 +77,28 @@ class FirebaseService {
         .set(dataToSave, SetOptions(merge: true));
   }
 
+  Future<void> appendCycleData({
+    required String userId,
+    required int energy,
+    required int complexity,
+    required int cycleCount,
+    required List<CycleRecord> todayCycles,
+  }) async {
+    await db
+        .collection('artifacts')
+        .doc('default-app-id')
+        .collection('users')
+        .doc(userId)
+        .collection('pomodoroData')
+        .doc('userState')
+        .set({
+          'energyHistory': FieldValue.arrayUnion([energy]),
+          'complexityHistory': FieldValue.arrayUnion([complexity]),
+          'cycleCount': cycleCount,
+          'todayCycles': todayCycles.map((e) => e.toJson()).toList(),
+        }, SetOptions(merge: true));
+  }
+
   Future<void> createInitialUserDataIfNotExists(String userId) async {
     final docRef = db
         .collection('artifacts')

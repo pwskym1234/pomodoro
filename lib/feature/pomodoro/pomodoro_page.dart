@@ -371,12 +371,13 @@ class _PomodoroPageState extends State<PomodoroPage> {
     });
 
     _recordCycle(energy, level);
-    _firebaseService.saveUserData(_userId, {
-      'energyHistory': _energyHistory,
-      'complexityHistory': _complexityHistory,
-      'cycleCount': _cycleCount,
-      'todayCycles': _todayCycles,
-    });
+    _firebaseService.appendCycleData(
+      userId: _userId,
+      energy: energy,
+      complexity: level,
+      cycleCount: _cycleCount,
+      todayCycles: _todayCycles,
+    );
     _switchMode();
   }
 

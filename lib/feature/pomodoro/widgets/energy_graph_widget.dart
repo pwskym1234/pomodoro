@@ -38,8 +38,7 @@ class HourlyGraph extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style:
-                const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         const SizedBox(height: 8),
         SizedBox(
           height: 150,
@@ -79,7 +78,8 @@ class _HourlyPainter extends CustomPainter {
     final axisPaint = Paint()
       ..color = Colors.grey
       ..strokeWidth = 1;
-    canvas.drawLine(Offset(0, size.height), Offset(size.width, size.height), axisPaint);
+    canvas.drawLine(
+        Offset(0, size.height), Offset(size.width, size.height), axisPaint);
     canvas.drawLine(Offset(0, 0), Offset(0, size.height), axisPaint);
 
     // y-axis labels
@@ -90,8 +90,8 @@ class _HourlyPainter extends CustomPainter {
             style: const TextStyle(color: Colors.black, fontSize: 10)),
         textDirection: TextDirection.ltr,
       )..layout();
-      textPainter.paint(
-          canvas, Offset(-20, size.height - i * stepY - textPainter.height / 2));
+      textPainter.paint(canvas,
+          Offset(-20, size.height - i * stepY - textPainter.height / 2));
     }
   }
 
@@ -103,7 +103,7 @@ class _EnergyPainter extends CustomPainter {
   final List<int> levels;
   _EnergyPainter(this.levels);
 
-  static const double _leftMargin = 30;
+  static const double _leftMargin = 700;
   static const double _bottomMargin = 20;
 
   @override
@@ -147,8 +147,10 @@ class _EnergyPainter extends CustomPainter {
             style: const TextStyle(color: Colors.black, fontSize: 10)),
         textDirection: TextDirection.ltr,
       )..layout();
-      textPainter.paint(canvas,
-          Offset(_leftMargin - 8 - textPainter.width, chartHeight - i * stepY - textPainter.height / 2));
+      textPainter.paint(
+          canvas,
+          Offset(_leftMargin - 8 - textPainter.width,
+              chartHeight - i * stepY - textPainter.height / 2));
     }
 
     // x-axis labels (minutes)
@@ -171,4 +173,3 @@ class _EnergyPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-

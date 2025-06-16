@@ -65,8 +65,9 @@ class _ReportPageState extends State<ReportPage> {
       return _todayCycles;
     }
     return _history
-            .firstWhere((d) => d.date == date, orElse: () => DayRecord(date: date, cycles: const []))
-            .cycles;
+        .firstWhere((d) => d.date == date,
+            orElse: () => DayRecord(date: date, cycles: const []))
+        .cycles;
   }
 
   Map<String, int> _weeklyMinutes() {
@@ -102,7 +103,7 @@ class _ReportPageState extends State<ReportPage> {
     final weekly = _weeklyMinutes();
     final dates = _availableDates();
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -124,14 +125,15 @@ class _ReportPageState extends State<ReportPage> {
             items: dates
                 .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                 .toList(),
-            onChanged: (v) => setState(() => _selectedDate = v ?? _selectedDate),
+            onChanged: (v) =>
+                setState(() => _selectedDate = v ?? _selectedDate),
           ),
           const SizedBox(height: 12),
           HourlyGraph(
             levels: _hourlyLevels(_selectedDate, energy: true),
             title: '시간별 에너지 레벨',
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
           HourlyGraph(
             levels: _hourlyLevels(_selectedDate, energy: false),
             title: '시간별 난이도 레벨',
@@ -154,7 +156,8 @@ class _ReportPageState extends State<ReportPage> {
             items: dates
                 .map((d) => DropdownMenuItem(value: d, child: Text(d)))
                 .toList(),
-            onChanged: (v) => setState(() => _selectedDate = v ?? _selectedDate),
+            onChanged: (v) =>
+                setState(() => _selectedDate = v ?? _selectedDate),
           ),
           const SizedBox(height: 12),
           DataTable(

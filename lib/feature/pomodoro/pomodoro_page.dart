@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -68,6 +69,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   int _cycleCount = 0;
   List<int> _energyHistory = [];
   List<int> _complexityHistory = [];
+  Timer? _goalSaveDebounce;
   int _currentComplexity = 1;
   bool _showEnergyPopup = false;
   final TextEditingController _startTimeController = TextEditingController();
@@ -123,26 +125,28 @@ class _PomodoroPageState extends State<PomodoroPage> {
     showCustomMessageBox(context, '저장되었습니다');
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _goalController.addListener(_onGoalChanged);
-    _startTimeController.text = _formatTime(DateTime.now());
-    _currentStartTime = _startTimeController.text;
-    _initialize();
-  }
-
-  void _onGoalChanged() {
-    final text = _goalController.text;
+  void _onGoalChanged(String text) {
     if (text == _currentGoal) return;
     setState(() {
       _currentGoal = text;
       _refinedGoal = '';
       _showGoalSuggestion = false;
     });
-    if (_userId.isNotEmpty) {
+    if (_userId.isEmpty) return;
+    _goalSaveDebounce?.cancel();
+    _goalSaveDebounce = Timer(const Duration(milliseconds: 500), () {
       _firebaseService.saveUserData(_userId, {'currentGoal': _currentGoal});
-    }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to goal changes via onChanged callback instead of a controller
+    // listener to avoid duplicate updates.
+    _startTimeController.text = _formatTime(DateTime.now());
+    _currentStartTime = _startTimeController.text;
+    _initialize();
   }
 
   Future<void> _initialize() async {
@@ -510,15 +514,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     border: OutlineInputBorder(),
                   ),
                   controller: _goalController,
-                  onChanged: (v) {
-                    setState(() {
-                      _currentGoal = v;
-                      _refinedGoal = '';
-                      _showGoalSuggestion = false;
-                    });
-                    _firebaseService
-                        .saveUserData(_userId, {'currentGoal': _currentGoal});
-                  },
+                  onChanged: _onGoalChanged,
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -653,6 +649,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
   @override
   void dispose() {
+    _goalSaveDebounce?.cancel();
     _goalController.dispose();
     _startTimeController.dispose();
     _timerController.cancel();

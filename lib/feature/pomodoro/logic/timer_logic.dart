@@ -12,6 +12,7 @@ class TimerController {
   }) {
     int totalSeconds = minutes * 60;
     _timer?.cancel();
+    onTick(totalSeconds ~/ 60, totalSeconds % 60);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (isPaused) return;
       totalSeconds--;

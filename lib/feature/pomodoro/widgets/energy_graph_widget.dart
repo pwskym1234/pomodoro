@@ -123,6 +123,7 @@ class _EnergyPainter extends CustomPainter {
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
       final y = chartHeight - levels[i] * stepY;
+      debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
       if (i == 0) {
         path.moveTo(x, y);
       } else {

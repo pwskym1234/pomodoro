@@ -368,8 +368,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
     final energy = _pendingEnergy ?? 1;
     setState(() {
       _currentComplexity = level;
-      _complexityHistory.add(level);
-      _energyHistory.add(energy);
+      // Create new list instances so widgets depending on these values
+      // receive updated references and repaint correctly.
+      _complexityHistory = List<int>.from(_complexityHistory)..add(level);
+      _energyHistory = List<int>.from(_energyHistory)..add(energy);
       debugPrint('_energyHistory: $_energyHistory');
       _pendingEnergy = null;
       _showComplexityPopup = false;
@@ -621,6 +623,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
                   ),
                 if (_showGraph)
                   EnergyGraph(
+                    key: ValueKey(_energyHistory.length),
                     levels: _energyHistory,
                     onClose: () => setState(() => _showGraph = false),
                   ),

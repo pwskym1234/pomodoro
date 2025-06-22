@@ -370,6 +370,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _currentComplexity = level;
       _complexityHistory.add(level);
       _energyHistory.add(energy);
+      debugPrint('_energyHistory: $_energyHistory');
       _pendingEnergy = null;
       _showComplexityPopup = false;
     });

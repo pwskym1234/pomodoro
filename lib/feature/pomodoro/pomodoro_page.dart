@@ -373,6 +373,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       debugPrint('_energyHistory: $_energyHistory');
       _pendingEnergy = null;
       _showComplexityPopup = false;
+      _showGraph = true;
     });
 
     _recordCycle(energy, level);

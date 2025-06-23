@@ -64,7 +64,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
   bool _isGoalRefining = false;
   bool _isGeneratingBreakIdea = false;
   bool _showShop = false;
-  bool _showGraph = false;
   List<ShopItem> _inventory = [];
   int _cycleCount = 0;
   List<int> _energyHistory = [];
@@ -557,11 +556,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: () => setState(() => _showGraph = true),
-                  child: const Text('에너지 그래프'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
                   onPressed: () => setState(() => _showHistory = true),
                   child: const Text('기록 보기'),
                 ),
@@ -623,12 +617,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
                     shopItems: _shopItems,
                     onBuy: _buyItem,
                     onClose: () => setState(() => _showShop = false),
-                  ),
-                if (_showGraph)
-                  EnergyGraph(
-                    key: ValueKey(_energyHistory.length),
-                    levels: _energyHistory,
-                    onClose: () => setState(() => _showGraph = false),
                   ),
                 if (_showHistory)
                   CycleHistoryPopup(

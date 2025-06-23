@@ -26,78 +26,6 @@ class EnergyGraph extends StatelessWidget {
   }
 }
 
-class HourlyGraph extends StatelessWidget {
-  final List<double> levels;
-  final String title;
-
-  const HourlyGraph({super.key, required this.levels, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 150,
-          width: double.infinity,
-          child: CustomPaint(painter: _HourlyPainter(levels)),
-        ),
-      ],
-    );
-  }
-}
-
-class _HourlyPainter extends CustomPainter {
-  final List<double> levels;
-
-  _HourlyPainter(this.levels);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.purple
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    final stepX = size.width / (levels.length - 1 == 0 ? 1 : levels.length - 1);
-    final stepY = size.height / 3;
-    final path = Path();
-    for (var i = 0; i < levels.length; i++) {
-      final x = i * stepX;
-      final y = size.height - levels[i] * stepY;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(path, paint);
-
-    final axisPaint = Paint()
-      ..color = Colors.grey
-      ..strokeWidth = 1;
-    canvas.drawLine(
-        Offset(0, size.height), Offset(size.width, size.height), axisPaint);
-    canvas.drawLine(Offset(0, 0), Offset(0, size.height), axisPaint);
-
-    // y-axis labels
-    for (var i = 1; i <= 3; i++) {
-      final textPainter = TextPainter(
-        text: TextSpan(
-            text: '$i',
-            style: const TextStyle(color: Colors.black, fontSize: 10)),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      textPainter.paint(canvas,
-          Offset(-20, size.height - i * stepY - textPainter.height / 2));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
 
 class EnergyPainter extends CustomPainter {
   final List<int> levels;
@@ -200,4 +128,30 @@ class EnergyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class EnergyGraphPanel extends StatelessWidget {
+  final List<int> levels;
+  final String title;
+
+  const EnergyGraphPanel({super.key, required this.levels, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 170,
+          width: double.infinity,
+          child: CustomPaint(
+            painter: EnergyPainter(levels),
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -103,7 +103,8 @@ class _EnergyPainter extends CustomPainter {
   final List<int> levels;
   _EnergyPainter(this.levels);
 
-  static const double _leftMargin = 700;
+  // Reduced left margin so the graph width reflects the number of cycles.
+  static const double _leftMargin = 40;
   static const double _bottomMargin = 20;
 
   /// Logs the calculated points for the given [levels] and [size]. This can be
@@ -117,7 +118,7 @@ class _EnergyPainter extends CustomPainter {
 
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
-      final y = chartHeight - levels[i] * stepY;
+      final y = levels[i] * stepY;
       debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
     }
   }
@@ -138,7 +139,7 @@ class _EnergyPainter extends CustomPainter {
     final path = Path();
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
-      final y = chartHeight - levels[i] * stepY;
+      final y = levels[i] * stepY;
       debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
       if (i == 0) {
         path.moveTo(x, y);
@@ -167,7 +168,7 @@ class _EnergyPainter extends CustomPainter {
       textPainter.paint(
           canvas,
           Offset(_leftMargin - 8 - textPainter.width,
-              chartHeight - i * stepY - textPainter.height / 2));
+              i * stepY - textPainter.height / 2));
     }
 
     // x-axis labels (minutes)

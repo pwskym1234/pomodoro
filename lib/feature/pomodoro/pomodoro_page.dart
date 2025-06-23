@@ -182,8 +182,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
               [];
           _currentComplexity = data['currentComplexity'] ?? 1;
           _todayCycles = (data['todayCycles'] as List?)
-                  ?.map((e) =>
-                      CycleRecord.fromJson(Map<String, dynamic>.from(e)))
+                  ?.map(
+                      (e) => CycleRecord.fromJson(Map<String, dynamic>.from(e)))
                   .toList() ??
               [];
           if (data['schedule'] != null) {
@@ -228,8 +228,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _updateStartTimeFromSchedule();
         _isLongBreak = false;
         if (_userId.isNotEmpty) {
-          _firebaseService
-              .saveUserData(_userId, {'cycleCount': _cycleCount});
+          _firebaseService.saveUserData(_userId, {'cycleCount': _cycleCount});
         }
       }
       _timerController.startTimer(
@@ -270,7 +269,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
   void _resetDailyCycles() {
     final date = DateTime.now();
-    final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final key =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     if (_todayCycles.isNotEmpty) {
       _history[key] = List<CycleRecord>.from(_todayCycles);
     }
@@ -299,8 +299,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
         _minutes = _focusMinutes;
         _isLongBreak = false;
       } else {
-        _isLongBreak =
-            _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
+        _isLongBreak = _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
         _minutes = _isLongBreak ? _longBreakMinutes : _breakMinutes;
       }
       _seconds = 0;
@@ -309,8 +308,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       if (goingToFocus) {
         _cycleCount += 1;
         if (_userId.isNotEmpty) {
-          _firebaseService
-              .saveUserData(_userId, {'cycleCount': _cycleCount});
+          _firebaseService.saveUserData(_userId, {'cycleCount': _cycleCount});
         }
       }
       if (goingToFocus) {
@@ -375,7 +373,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       debugPrint('_energyHistory: $_energyHistory');
       // Print graph coordinates each time energy is recorded for easier
       // debugging without requiring the graph to be visible.
-      _EnergyPainter.printEnergyPoints(
+      EnergyPainter.printEnergyPoints(
         _energyHistory,
         const Size(330, 170),
       );
@@ -393,7 +391,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
     );
     _switchMode();
   }
-
 
   void _buyItem(ShopItem item) {
     if (!GoalLogic.canAfford(item, _coins)) {

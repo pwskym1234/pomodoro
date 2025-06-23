@@ -20,7 +20,7 @@ class EnergyGraph extends StatelessWidget {
       ),
       content: CustomPaint(
         size: const Size(330, 170),
-        painter: _EnergyPainter(levels),
+        painter: EnergyPainter(levels),
       ),
     );
   }
@@ -99,9 +99,9 @@ class _HourlyPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-class _EnergyPainter extends CustomPainter {
+class EnergyPainter extends CustomPainter {
   final List<int> levels;
-  _EnergyPainter(this.levels);
+  EnergyPainter(this.levels);
 
   // Reduced left margin so the graph width reflects the number of cycles.
   static const double _leftMargin = 40;

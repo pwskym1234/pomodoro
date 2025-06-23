@@ -106,6 +106,22 @@ class _EnergyPainter extends CustomPainter {
   static const double _leftMargin = 700;
   static const double _bottomMargin = 20;
 
+  /// Logs the calculated points for the given [levels] and [size]. This can be
+  /// used outside of the painting context to debug the values that will be
+  /// drawn on the canvas.
+  static void printEnergyPoints(List<int> levels, Size size) {
+    final chartWidth = size.width - _leftMargin;
+    final chartHeight = size.height - _bottomMargin;
+    final stepX = chartWidth / (levels.length - 1 == 0 ? 1 : levels.length - 1);
+    final stepY = chartHeight / 3;
+
+    for (var i = 0; i < levels.length; i++) {
+      final x = _leftMargin + i * stepX;
+      final y = chartHeight - levels[i] * stepY;
+      debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
+    }
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final chartWidth = size.width - _leftMargin;

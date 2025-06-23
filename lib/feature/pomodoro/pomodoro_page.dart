@@ -373,6 +373,12 @@ class _PomodoroPageState extends State<PomodoroPage> {
       _complexityHistory = List<int>.from(_complexityHistory)..add(level);
       _energyHistory = List<int>.from(_energyHistory)..add(energy);
       debugPrint('_energyHistory: $_energyHistory');
+      // Print graph coordinates each time energy is recorded for easier
+      // debugging without requiring the graph to be visible.
+      EnergyPainter.printEnergyPoints(
+        _energyHistory,
+        const Size(330, 170),
+      );
       _pendingEnergy = null;
       _showComplexityPopup = false;
     });

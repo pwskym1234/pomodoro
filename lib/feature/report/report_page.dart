@@ -18,6 +18,7 @@ class _ReportPageState extends State<ReportPage> {
   List<CycleRecord> _todayCycles = [];
   bool _loading = true;
   String _selectedDate = '';
+  int _focusMinutes = 25;
 
 
   @override
@@ -39,6 +40,7 @@ class _ReportPageState extends State<ReportPage> {
           _todayCycles = (data['todayCycles'] as List? ?? [])
               .map((e) => CycleRecord.fromJson(Map<String, dynamic>.from(e)))
               .toList();
+          _focusMinutes = data['focusMinutes'] ?? 25;
           _selectedDate = _formatDate(DateTime.now());
           _loading = false;
         });
@@ -75,7 +77,7 @@ class _ReportPageState extends State<ReportPage> {
       final day = now.subtract(Duration(days: i));
       final key = _formatDate(day);
       final cycles = _getCycles(key);
-      map[key] = cycles.length * 25;
+      map[key] = cycles.length * _focusMinutes;
     }
     final ordered = map.keys.toList()..sort();
     return {for (var k in ordered) k: map[k] ?? 0};
@@ -86,6 +88,11 @@ class _ReportPageState extends State<ReportPage> {
     return cycles
         .map((c) => energy ? c.energy : c.complexity)
         .toList();
+  }
+
+  List<String> _startTimesFor(String date) {
+    final cycles = _getCycles(date);
+    return cycles.map((c) => c.startTime).toList();
   }
 
   Widget _buildSummary() {
@@ -120,11 +127,13 @@ class _ReportPageState extends State<ReportPage> {
           const SizedBox(height: 12),
           EnergyGraphPanel(
             levels: _hourlyLevels(_selectedDate, energy: true),
+            startTimes: _startTimesFor(_selectedDate),
             title: '사이클별 에너지 레벨',
           ),
           const SizedBox(height: 40),
           EnergyGraphPanel(
             levels: _hourlyLevels(_selectedDate, energy: false),
+            startTimes: _startTimesFor(_selectedDate),
             title: '사이클별 난이도 레벨',
           ),
         ],

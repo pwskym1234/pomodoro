@@ -149,6 +149,16 @@ class _EnergyPainter extends CustomPainter {
     }
     canvas.drawPath(path, paint);
 
+    // Draw circles for each point so they are visible on the graph.
+    final pointPaint = Paint()
+      ..color = Colors.purple
+      ..style = PaintingStyle.fill;
+    for (var i = 0; i < levels.length; i++) {
+      final x = _leftMargin + i * stepX;
+      final y = levels[i] * stepY;
+      canvas.drawCircle(Offset(x, y), 3, pointPaint);
+    }
+
     final axisPaint = Paint()
       ..color = Colors.grey
       ..strokeWidth = 1;

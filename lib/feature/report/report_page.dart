@@ -19,8 +19,6 @@ class _ReportPageState extends State<ReportPage> {
   bool _loading = true;
   String _selectedDate = '';
 
-  static const _startHour = 7;
-  static const _endHour = 23;
 
   @override
   void initState() {
@@ -83,19 +81,10 @@ class _ReportPageState extends State<ReportPage> {
     return {for (var k in ordered) k: map[k] ?? 0};
   }
 
-  List<double> _hourlyLevels(String date, {required bool energy}) {
+  List<int> _hourlyLevels(String date, {required bool energy}) {
     final cycles = _getCycles(date);
-    final hours = _endHour - _startHour + 1;
-    final buckets = List.generate(hours, (_) => <int>[]);
-    for (final c in cycles) {
-      final parts = c.startTime.split(':');
-      final hour = int.tryParse(parts.first) ?? 0;
-      if (hour >= _startHour && hour <= _endHour) {
-        buckets[hour - _startHour].add(energy ? c.energy : c.complexity);
-      }
-    }
-    return buckets
-        .map((b) => b.isEmpty ? 0.0 : b.reduce((a, b) => a + b) / b.length)
+    return cycles
+        .map((c) => energy ? c.energy : c.complexity)
         .toList();
   }
 
@@ -129,14 +118,14 @@ class _ReportPageState extends State<ReportPage> {
                 setState(() => _selectedDate = v ?? _selectedDate),
           ),
           const SizedBox(height: 12),
-          HourlyGraph(
+          EnergyGraphPanel(
             levels: _hourlyLevels(_selectedDate, energy: true),
-            title: '시간별 에너지 레벨',
+            title: '사이클별 에너지 레벨',
           ),
           const SizedBox(height: 40),
-          HourlyGraph(
+          EnergyGraphPanel(
             levels: _hourlyLevels(_selectedDate, energy: false),
-            title: '시간별 난이도 레벨',
+            title: '사이클별 난이도 레벨',
           ),
         ],
       ),

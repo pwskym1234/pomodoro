@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 class EnergyGraph extends StatelessWidget {
   final List<int> levels;
   final VoidCallback onClose;
+  final List<String>? startTimes;
 
-  const EnergyGraph({super.key, required this.levels, required this.onClose});
+  const EnergyGraph({
+    super.key,
+    required this.levels,
+    required this.onClose,
+    this.startTimes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class EnergyGraph extends StatelessWidget {
       ),
       content: CustomPaint(
         size: const Size(330, 170),
-        painter: EnergyPainter(levels),
+        painter: EnergyPainter(levels, startTimes: startTimes),
       ),
     );
   }
@@ -29,7 +35,8 @@ class EnergyGraph extends StatelessWidget {
 
 class EnergyPainter extends CustomPainter {
   final List<int> levels;
-  EnergyPainter(this.levels);
+  final List<String>? startTimes;
+  EnergyPainter(this.levels, {this.startTimes});
 
   // Reduced left margin so the graph width reflects the number of cycles.
   static const double _leftMargin = 40;
@@ -42,11 +49,11 @@ class EnergyPainter extends CustomPainter {
     final chartWidth = size.width - _leftMargin;
     final chartHeight = size.height - _bottomMargin;
     final stepX = chartWidth / (levels.length - 1 == 0 ? 1 : levels.length - 1);
-    final stepY = chartHeight / 3;
+    final stepY = chartHeight / 2;
 
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
-      final y = levels[i] * stepY;
+      final y = chartHeight - (levels[i] - 1) * stepY;
       debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
     }
   }
@@ -62,12 +69,12 @@ class EnergyPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final stepX = chartWidth / (levels.length - 1 == 0 ? 1 : levels.length - 1);
-    final stepY = chartHeight / 3;
+    final stepY = chartHeight / 2;
 
     final path = Path();
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
-      final y = levels[i] * stepY;
+      final y = chartHeight - (levels[i] - 1) * stepY;
       debugPrint('Point $i: x=$x, y=$y, level=${levels[i]}');
       if (i == 0) {
         path.moveTo(x, y);
@@ -83,7 +90,7 @@ class EnergyPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     for (var i = 0; i < levels.length; i++) {
       final x = _leftMargin + i * stepX;
-      final y = levels[i] * stepY;
+      final y = chartHeight - (levels[i] - 1) * stepY;
       canvas.drawCircle(Offset(x, y), 3, pointPaint);
     }
 
@@ -106,16 +113,16 @@ class EnergyPainter extends CustomPainter {
       textPainter.paint(
           canvas,
           Offset(_leftMargin - 8 - textPainter.width,
-              i * stepY - textPainter.height / 2));
+              chartHeight - (i - 1) * stepY - textPainter.height / 2));
     }
 
-    // x-axis labels (minutes)
-    const cycleMinutes = 25;
+    // x-axis labels
     for (var i = 0; i < levels.length; i++) {
-      final minute = (i + 1) * cycleMinutes;
+      final label =
+          startTimes != null && startTimes!.length > i ? startTimes![i] : '${(i + 1) * 25}';
       final textPainter = TextPainter(
         text: TextSpan(
-            text: '$minute',
+            text: label,
             style: const TextStyle(color: Colors.black, fontSize: 10)),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -133,8 +140,10 @@ class EnergyPainter extends CustomPainter {
 class EnergyGraphPanel extends StatelessWidget {
   final List<int> levels;
   final String title;
+  final List<String>? startTimes;
 
-  const EnergyGraphPanel({super.key, required this.levels, required this.title});
+  const EnergyGraphPanel(
+      {super.key, required this.levels, required this.title, this.startTimes});
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +157,7 @@ class EnergyGraphPanel extends StatelessWidget {
           height: 170,
           width: double.infinity,
           child: CustomPaint(
-            painter: EnergyPainter(levels),
+            painter: EnergyPainter(levels, startTimes: startTimes),
           ),
         ),
       ],

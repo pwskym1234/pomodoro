@@ -126,6 +126,7 @@ class FirebaseService {
         'currentComplexity': 1,
         'todayCycles': [],
         'history': [],
+        'lastCycleDate': '',
         'schedule': Schedule.empty(
           const ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
           17,

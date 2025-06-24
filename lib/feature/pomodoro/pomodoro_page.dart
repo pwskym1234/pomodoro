@@ -59,7 +59,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
   int _coins = 0;
   String _currentGoal = '';
   String _refinedGoal = '';
-  bool _showGoalPopup = false;
   bool _showGoalSuggestion = false;
   bool _isGoalRefining = false;
   bool _isGeneratingBreakIdea = false;
@@ -70,7 +69,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
   List<int> _complexityHistory = [];
   Timer? _goalSaveDebounce;
   int _currentComplexity = 1;
-  bool _showEnergyPopup = false;
   final TextEditingController _startTimeController = TextEditingController();
   String _currentStartTime = '';
   List<CycleRecord> _todayCycles = [];
@@ -84,6 +82,9 @@ class _PomodoroPageState extends State<PomodoroPage> {
   ];
 
   int _selectedDayIndex = DateTime.now().weekday - 1;
+
+  String _lastResetDate = '';
+  Timer? _midnightTimer;
 
   String _currentDayKey() => _dayKeys[_selectedDayIndex];
 
@@ -185,6 +186,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
                       (e) => CycleRecord.fromJson(Map<String, dynamic>.from(e)))
                   .toList() ??
               [];
+          _lastResetDate = data['lastCycleDate'] ?? '';
           if (data['schedule'] != null) {
             final schedJson = Map<String, dynamic>.from(data['schedule']);
             _schedule = {
@@ -201,6 +203,8 @@ class _PomodoroPageState extends State<PomodoroPage> {
           _seconds = 0;
           _isLoading = false;
           _updateStartTimeFromSchedule();
+          _checkDailyReset();
+          _scheduleMidnightReset();
         });
         if (_goalController.text != _currentGoal) {
           _goalController.text = _currentGoal;
@@ -237,7 +241,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
             _isActive = false;
           });
           if (_isFocusMode) {
-            setState(() => _showGoalPopup = true);
+            _promptGoalAchieved();
           } else {
             _switchMode();
           }
@@ -278,6 +282,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
     _energyHistory.clear();
     _complexityHistory.clear();
     _isLongBreak = false;
+    _lastResetDate = key;
     _firebaseService.saveUserData(_userId, {
       'cycleCount': _cycleCount,
       'energyHistory': _energyHistory,
@@ -286,6 +291,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
       'history': _history.entries
           .map((e) => DayRecord(date: e.key, cycles: e.value))
           .toList(),
+      'lastCycleDate': _lastResetDate,
     });
     setState(() {});
   }
@@ -316,38 +322,75 @@ class _PomodoroPageState extends State<PomodoroPage> {
     });
   }
 
+  Future<void> _promptGoalAchieved() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => GoalAchievedPopup(
+        goalText: _currentGoal,
+        onConfirm: () => Navigator.of(context).pop(true),
+        onCancel: () => Navigator.of(context).pop(false),
+      ),
+    );
+    if (result == true) {
+      _completeGoal();
+    } else {
+      _failGoal();
+    }
+  }
+
+  Future<void> _promptEnergyLevel() async {
+    final level = await showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => EnergyLevelPopup(
+        onSelect: (l) => Navigator.of(context).pop(l),
+      ),
+    );
+    if (level != null) {
+      _recordEnergy(level);
+    }
+  }
+
+  Future<void> _promptComplexityLevel() async {
+    final level = await showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ComplexityLevelPopup(
+        onSelect: (l) => Navigator.of(context).pop(l),
+      ),
+    );
+    if (level != null) {
+      _recordComplexity(level);
+    }
+  }
+
   void _completeGoal() {
     final earned = GoalLogic.calculateXPEarned(_inventory);
     setState(() {
       _xp += earned;
       _lastCycleGoal = _currentGoal;
       _currentGoal = '';
-      _showGoalPopup = false;
-      _showEnergyPopup = true;
     });
     _firebaseService
         .saveUserData(_userId, {'xp': _xp, 'currentGoal': _currentGoal});
+    _promptEnergyLevel();
   }
 
   void _failGoal() {
     setState(() {
       _lastCycleGoal = _currentGoal;
       _currentGoal = '';
-      _showGoalPopup = false;
-      _showEnergyPopup = true;
     });
     _firebaseService.saveUserData(_userId, {'currentGoal': _currentGoal});
+    _promptEnergyLevel();
   }
 
   int? _pendingEnergy;
-  bool _showComplexityPopup = false;
 
   void _recordEnergy(int level) {
-    setState(() {
-      _showEnergyPopup = false;
-      _pendingEnergy = level;
-      _showComplexityPopup = true;
-    });
+    _pendingEnergy = level;
+    _promptComplexityLevel();
   }
 
   void _recordCycle(int energy, int complexity) {
@@ -377,7 +420,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
         const Size(330, 170),
       );
       _pendingEnergy = null;
-      _showComplexityPopup = false;
     });
 
     _recordCycle(energy, level);
@@ -389,6 +431,24 @@ class _PomodoroPageState extends State<PomodoroPage> {
       todayCycles: _todayCycles,
     );
     _switchMode();
+  }
+
+  void _checkDailyReset() {
+    final today = _formatDate(DateTime.now());
+    if (_lastResetDate != today) {
+      _resetDailyCycles();
+    }
+  }
+
+  void _scheduleMidnightReset() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final duration = tomorrow.difference(now);
+    _midnightTimer?.cancel();
+    _midnightTimer = Timer(duration, () {
+      _resetDailyCycles();
+      _scheduleMidnightReset();
+    });
   }
 
   void _buyItem(ShopItem item) {
@@ -442,6 +502,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
   String _formatTime(DateTime dt) {
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 
   Widget build(BuildContext context) {
@@ -582,22 +646,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
                       ..._inventory.map((item) => Text('• ${item.name}')),
                     ],
                   ),
-                if (_showGoalPopup)
-                  GoalAchievedPopup(
-                    goalText: _currentGoal,
-                    onConfirm: _completeGoal,
-                    onCancel: _failGoal,
-                  ),
-                if (_showEnergyPopup)
-                  EnergyLevelPopup(
-                    onSelect: (level) {
-                      _recordEnergy(level);
-                    },
-                  ),
-                if (_showComplexityPopup)
-                  ComplexityLevelPopup(
-                    onSelect: (level) => _recordComplexity(level),
-                  ),
                 if (_showGoalSuggestion && _refinedGoal.isNotEmpty)
                   GoalSuggestionPopup(
                     originalGoal: _currentGoal,
@@ -647,6 +695,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
     _goalSaveDebounce?.cancel();
     _goalController.dispose();
     _startTimeController.dispose();
+    _midnightTimer?.cancel();
     _timerController.cancel();
     super.dispose();
   }

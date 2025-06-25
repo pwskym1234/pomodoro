@@ -199,8 +199,16 @@ class _PomodoroPageState extends State<PomodoroPage> {
             final record = DayRecord.fromJson(Map<String, dynamic>.from(day));
             _history[record.date] = record.cycles;
           });
-          _minutes = _focusMinutes;
-          _seconds = 0;
+          if (!_isActive) {
+            if (_isFocusMode) {
+              _minutes = _focusMinutes;
+            } else {
+              _isLongBreak =
+                  _cycleCount % _longBreakInterval == 0 && _cycleCount > 0;
+              _minutes = _isLongBreak ? _longBreakMinutes : _breakMinutes;
+            }
+            _seconds = 0;
+          }
           _isLoading = false;
           _updateStartTimeFromSchedule();
           _checkDailyReset();
